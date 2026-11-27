@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventario - SuperMarket{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body text-center py-5">
+        <h2 class="text-success">Arquitectura Base Lista (HU-01 y HU-02)</h2>
+        <p class="text-muted">Conexión a MongoDB Atlas (<code>supermercado_db</code>) activa. Productos actuales: <strong>{{ products|length }}</strong></p>
+    </div>
+</div>
+{% endblock %}
