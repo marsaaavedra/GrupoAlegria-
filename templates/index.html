@@ -1,12 +1,192 @@
+
 {% extends 'base.html' %}
 
 {% block title %}Inventario - SuperMarket{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-body text-center py-5">
-        <h2 class="text-success">Arquitectura Base Lista (HU-01 y HU-02)</h2>
-        <p class="text-muted">Conexión a MongoDB Atlas (<code>supermercado_db</code>) activa. Productos actuales: <strong>{{ products|length }}</strong></p>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="text-success fw-bold">Inventario del Supermercado</h2>
+        <p class="text-muted mb-0">Consulta y busca los productos registrados.</p>
+    </div>
+    <span class="badge bg-success fs-6">
+        {{ products|length }} productos encontrados
+    </span>
+</div>
+
+<!-- A10: BUSQUEDA POR NOMBRE Y CATEGORIA -->
+<!-- A11: FILTRO POR RANGO DE PRECIO -->
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Buscar y filtrar productos</h5>
+    </div>
+
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('products.list_products') }}">
+
+            <div class="row g-3">
+
+                <!-- Buscar por nombre -->
+                <div class="col-md-6">
+                    <label for="name" class="form-label fw-semibold">
+                        Nombre del producto
+                    </label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="name"
+                        name="name"
+                        placeholder="Ej. Leche PIL"
+                        value="{{ name }}"
+                    >
+                </div>
+
+                <!-- Filtrar por categoria -->
+                <div class="col-md-6">
+                    <label for="category" class="form-label fw-semibold">
+                        Categoría
+                    </label>
+
+                    <select
+                        class="form-select"
+                        id="category"
+                        name="category"
+                    >
+                        <option value="">Todas las categorías</option>
+
+                        {% for cat in categories %}
+                        <option value="{{ cat }}"
+                            {% if category == cat %}selected{% endif %}>
+                            {{ cat }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Precio minimo -->
+                <div class="col-md-6">
+                    <label for="min_price" class="form-label fw-semibold">
+                        Precio mínimo (Bs)
+                    </label>
+                    <input
+                        type="number"
+                        class="form-control"
+                        id="min_price"
+                        name="min_price"
+                        min="0"
+                        step="0.01"
+                        placeholder="Ej. 5.00"
+                        value="{{ min_price }}"
+                    >
+                </div>
+
+                <!-- Precio maximo -->
+                <div class="col-md-6">
+                    <label for="max_price" class="form-label fw-semibold">
+                        Precio máximo (Bs)
+                    </label>
+                    <input
+                        type="number"
+                        class="form-control"
+                        id="max_price"
+                        name="max_price"
+                        min="0"
+                        step="0.01"
+                        placeholder="Ej. 100.00"
+                        value="{{ max_price }}"
+                    >
+                </div>
+
+            </div>
+
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+
+                <a href="{{ url_for('products.list_products') }}"
+                   class="btn btn-outline-secondary">
+                    Limpiar filtros
+                </a>
+            </div>
+
+        </form>
     </div>
 </div>
+
+<!-- LISTADO DE PRODUCTOS: INTEGRANTE 1 -->
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">Productos registrados</h5>
+    </div>
+
+    <div class="card-body">
+
+        {% if products %}
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+
+                <thead class="table-success">
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            <img
+                                src="{{ product.image or '/static/img/default-product.png' }}"
+                                alt="{{ product.name }}"
+                                width="55"
+                                height="55"
+                                class="rounded"
+                                style="object-fit: cover;"
+                            >
+                        </td>
+
+                        <td>
+                            <strong>{{ product.name }}</strong>
+                            <div class="small text-muted">
+                                {{ product.description }}
+                            </div>
+                        </td>
+
+                        <td>{{ product.category }}</td>
+
+                        <td class="fw-semibold text-success">
+                            Bs {{ "%.2f"|format(product.price) }}
+                        </td>
+
+                        <td>{{ product.stock }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+        {% else %}
+
+        <div class="text-center py-5">
+            <h5 class="text-muted">No se encontraron productos</h5>
+            <p class="text-muted mb-0">
+                Intenta modificar los criterios de búsqueda.
+            </p>
+        </div>
+
+        {% endif %}
+
+    </div>
+</div>
+
 {% endblock %}
