@@ -1,7 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from bson.objectid import ObjectId
 import database as dbase
 from models.product import Product, CATEGORIES
+import os
+from werkzeug.utils import secure_filename
+import uuid
+
 
 products_bp = Blueprint('products', __name__)
 db = dbase.dbConnection()
@@ -78,11 +82,67 @@ def list_products():
 # ==============================================================================
 # SECCIÓN INTEGRANTE 2 (HU-03, HU-05, HU-08): CREAR PRODUCTO E IMÁGENES
 # ==============================================================================
+
 @products_bp.route('/products/new', methods=['GET', 'POST'])
 def create_product():
-    # TODO: Integrante 2 implementa el formulario GET y el guardado POST aquí
-    flash("Vista /products/new en construcción (Integrante 2)", "info")
-    return redirect(url_for('products.list_products'))
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        price = request.form.get('price', '').strip()
+        stock = request.form.get('stock', '').strip()
+        category = request.form.get('category', '').strip()
+        image = request.files.get('image')
+
+        if not name or not description or not price or not stock or not category:
+            flash('Todos los campos son obligatorios.', 'warning')
+            return render_template('product_form.html', categories=CATEGORIES)
+
+        try:
+            price = float(price)
+            stock = int(stock)
+
+            if price <= 0 or stock < 0:
+            raise ValueError
+
+        except ValueError:
+            flash('El precio y el stock deben ser números válidos y positivos.', 'warning')
+            return render_template('product_form.html', categories=CATEGORIES)
+
+        if category not in CATEGORIES:
+            flash('Selecciona una categoría válida.', 'warning')
+            return render_template('product_form.html', categories=CATEGORIES)
+
+        image_path = '/static/img/default-product.png'
+
+        if image and image.filename:
+            allowed_extensions = {'png', 'jpg', 'jpeg', 'webp'}
+            extension = image.filename.rsplit('.', 1)[-1].lower()
+
+            if '.' not in image.filename or extension not in allowed_extensions:
+                flash('La imagen debe ser PNG, JPG, JPEG o WEBP.', 'warning')
+                return render_template('product_form.html', categories=CATEGORIES)
+
+            filename = secure_filename(image.filename)
+            filename = str(uuid.uuid4()) + '_' + filename
+
+            upload_folder = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(upload_folder, exist_ok=True)
+            image.save(os.path.join(upload_folder, filename))
+
+            image_path = '/static/uploads/' + filename
+
+        product = Product(name, description, price, stock, category, image_path)
+
+        try:
+            db['products'].insert_one(product.toDBCollection())
+            flash('Producto registrado correctamente.', 'success')
+            return redirect(url_for('products.list_products'))
+
+        except Exception as e:
+            flash('Error al guardar el producto: ' + str(e), 'danger')
+            return render_template('product_form.html', categories=CATEGORIES)
+
+    return render_template('product_form.html', categories=CATEGORIES)
 
 
 # ==============================================================================
